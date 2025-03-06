@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands, tasks
 import asyncio
+import os
 
 # Bot setup
 intents = discord.Intents.default()
@@ -83,5 +84,7 @@ async def listmessages(ctx):
     await ctx.send(response)
 
 # Run the bot
-# Replace 'YOUR_TOKEN_HERE' with your actual Discord bot token
-bot.run('YOUR_TOKEN_HERE')
+# Fetch the token from an environment variable
+TOKEN = os.getenv("DISCORD_BOT_TOKEN")  # "DISCORD_BOT_TOKEN" is the name of the variable
+
+bot.run(TOKEN)
