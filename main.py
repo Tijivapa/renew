@@ -1,0 +1,87 @@
+import discord
+from discord.ext import commands, tasks
+import asyncio
+
+# Bot setup
+intents = discord.Intents.default()
+intents.message_content = True
+bot = commands.Bot(command_prefix='!', intents=intents)
+
+# Configuration dictionary to store message settings
+message_configs = {}
+
+class MessageConfig:
+    def __init__(self, channel_id, message, interval, delete_after):
+        self.channel_id = channel_id
+        self.message = message
+        self.interval = interval  # in seconds
+        self.delete_after = delete_after  # in seconds
+
+@bot.event
+async def on_ready():
+    print(f'Bot is ready as {bot.user}')
+
+# Command to set up a repeating message
+@bot.command()
+async def setmessage(ctx, channel: discord.TextChannel, interval: int, delete_after: int, *, message: str):
+    """Sets up a repeating message
+    Usage: !setmessage #channel interval_in_seconds delete_after_seconds your_message"""
+    
+    # Store the message configuration
+    config = MessageConfig(channel.id, message, interval, delete_after)
+    message_configs[channel.id] = config
+    
+    await ctx.send(f"Message set for {channel.mention} every {interval} seconds, deleting after {delete_after} seconds")
+    
+    # Start the message loop if not already running
+    if not send_message_loop.is_running():
+        send_message_loop.start()
+
+# Command to stop messages in a channel
+@bot.command()
+async def stopmessage(ctx, channel: discord.TextChannel):
+    """Stops repeating messages in a channel"""
+    if channel.id in message_configs:
+        del message_configs[channel.id]
+        await ctx.send(f"Stopped messages in {channel.mention}")
+    else:
+        await ctx.send(f"No messages were set for {channel.mention}")
+
+# Task to handle sending messages
+@tasks.loop(seconds=1)
+async def send_message_loop():
+    for channel_id, config in list(message_configs.items()):
+        channel = bot.get_channel(channel_id)
+        if channel:
+            try:
+                message = await channel.send(config.message)
+                if config.delete_after > 0:
+                    await asyncio.sleep(config.delete_after)
+                    await message.delete()
+                await asyncio.sleep(max(0, config.interval - config.delete_after))
+            except discord.errors.Forbidden:
+                print(f"No permission to send messages in channel {channel_id}")
+            except Exception as e:
+                print(f"Error in message loop: {e}")
+
+# Command to list active message configurations
+@bot.command()
+async def listmessages(ctx):
+    """Lists all active message configurations"""
+    if not message_configs:
+        await ctx.send("No active message configurations")
+        return
+        
+    response = "Active message configurations:\n"
+    for channel_id, config in message_configs.items():
+        channel = bot.get_channel(channel_id)
+        if channel:
+            response += (f"Channel: {channel.mention}, "
+                        f"Interval: {config.interval}s, "
+                        f"Delete after: {config.delete_after}s, "
+                        f"Message: {config.message}\n")
+    await ctx.send(response)
+
+# Run the bot
+# Replace 'YOUR_TOKEN_HERE' with your actual Discord bot token
+bot.run('YOUR_TOKEN_HERE')
