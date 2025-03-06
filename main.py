@@ -84,4 +84,4 @@ async def listmessages(ctx):
 
 # Run the bot
 # Replace 'YOUR_TOKEN_HERE' with your actual Discord bot token
-bot.run(YOUR_TOKEN_HERE)
+bot.run('YOUR_TOKEN_HERE')
