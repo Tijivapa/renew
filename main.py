@@ -9,6 +9,9 @@ intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix='!', intents=intents)
 
+# Load environment variables
+load_dotenv()
+
 # Configuration dictionary to store message settings
 message_configs = {}
 
@@ -85,6 +88,7 @@ async def listmessages(ctx):
     await ctx.send(response)
 
 # Run the bot
-load_dotenv()
-# Replace 'YOUR_TOKEN_HERE' with your actual Discord bot token
-bot.run('YOUR_TOKEN_HERE')
+token = os.environ.get('DISCORD_TOKEN')
+if token is None:
+    raise ValueError("No token found. Make sure DISCORD_TOKEN is set in environment variables.")
+bot.run(token)
